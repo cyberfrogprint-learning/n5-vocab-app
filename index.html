@@ -159,27 +159,61 @@
         const messageEl = document.getElementById('message');
 
         async function loadSheet() {
-            let url = sheetUrlInput.value.trim();
-            if (!url) return showMessage("Dán link CSV vào trước!", "error");
+    let url = sheetUrlInput.value.trim();
+    if (!url) return showMessage("https://docs.google.com/spreadsheets/d/e/2PACX-1vRtC4KU4o9VQ37slwlM4oNFgg76etlvM-z8kscz35G7GbEwV4VmSGqNiupxA0KHGWP0osMemE27_OOy/pub?output=csv", "error");
+    
+    try {
+        const res = await fetch(url);
+        const text = await res.text();
+        
+        const rows = text.split('\n').slice(1); // bỏ header
+        data = [];
+        
+        rows.forEach(r => {
+            if (!r.trim()) return;
             
-            try {
-                const res = await fetch(url);
-                const text = await res.text();
-                const rows = text.split('\n').slice(1);
-                
-                data = [];
-                rows.forEach(r => {
-                    if (!r.trim()) return;
-                    const [jp, vi] = r.split(',').map(c => c.trim().replace(/^"|"$/g,''));
-                    if (jp && vi) data.push({jp, vi});
-                });
-
-                showMessage(`Tải xong ${data.length} từ!`, "success");
-                nextCard();
-            } catch(e) {
-                showMessage("Lỗi load sheet. Kiểm tra link!", "error");
+            // Parse CSV thông minh hơn (xử lý dấu ngoặc kép và phẩy bên trong)
+            const columns = parseCSVLine(r);
+            const jp = columns[0] ? columns[0].trim() : '';
+            const vi = columns[1] ? columns[1].trim() : '';
+            
+            if (jp && vi) {
+                data.push({ jp, vi });
             }
+        });
+
+        if (data.length > 0) {
+            showMessage(`✅ Tải xong ${data.length} từ vựng!`, "success");
+            nextCard();
+        } else {
+            showMessage("Không tìm thấy dữ liệu. Kiểm tra sheet!", "error");
         }
+    } catch(e) {
+        console.error(e);
+        showMessage("❌ Lỗi load sheet. Link có công khai chưa?", "error");
+    }
+}
+
+// Hàm parse CSV đơn giản nhưng hiệu quả
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    result.push(current);
+    return result;
+}
 
         function nextCard() {
             choicesEl.innerHTML = '';
