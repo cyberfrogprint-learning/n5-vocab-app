@@ -1,30 +1,35 @@
 <body>
+
 <div class="app">
 
-<h1>🇯🇵 N5 Trainer XS MAX</h1>
+<h2>🌸 Ôn từ vựng Đông Du</h2>
+
+<select id="unitSelect"></select>
 
 <select id="mode">
-  <option value="flash">Flashcard</option>
-  <option value="typing">Typing</option>
-  <option value="quiz">Quiz</option>
-  <option value="wrong">Sai</option>
+  <option value="mcq">Trắc nghiệm</option>
+  <option value="typing">Nhập đáp án</option>
+  <option value="wrong">Ôn từ sai</option>
 </select>
 
-<div class="card" id="card">
-  <div id="front"></div>
-  <div id="back" class="hidden"></div>
-</div>
+<select id="direction">
+  <option value="jpvi">Nhật → Việt</option>
+  <option value="vijp">Việt → Nhật</option>
+</select>
 
-<div id="typingBox" class="hidden">
-  <input id="answer" placeholder="Nhập nghĩa...">
-  <button onclick="checkTyping()">Check</button>
-</div>
+<div id="card"></div>
 
 <div id="choices"></div>
 
-<h3 id="stats"></h3>
+<div id="typingBox">
+  <input id="answer">
+  <button onclick="checkTyping()">OK</button>
+</div>
 
-<button onclick="toggleDark()">🌙</button>
+<p id="stats"></p>
 
 </div>
+
+<script src="app.js"></script>
+
 </body>
