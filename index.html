@@ -7,23 +7,38 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
         body {
-            margin:0; font-family: 'Noto Sans JP', sans-serif;
+            margin: 0; padding: 0;
+            font-family: 'Noto Sans JP', sans-serif;
             background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://img4.thuthuatphanmem.vn/uploads/2019/12/21/hinh-anh-nhat-ban-tuyet-dep-dinh-dai-lau-cac-nhin-ra-nui-phu_6dwkE_104011946.jpg') center/cover fixed;
-            color:#333; min-height:100vh; display:flex; justify-content:center; align-items:center;
+            color: #333; min-height: 100vh; display: flex; justify-content: center; align-items: center;
         }
-        .app { width:95%; max-width:500px; background:rgba(255,255,255,0.97); border-radius:28px; padding:20px; box-shadow:0 25px 60px rgba(0,0,0,0.3); }
-        h1 { text-align:center; color:#d32f2f; margin:0 0 15px; }
-        .tab { display:flex; gap:5px; margin-bottom:15px; }
-        .tab button { flex:1; padding:10px; border:none; border-radius:12px; font-weight:bold; cursor:pointer; }
-        .tab button.active { background:#ff5a5f; color:white; }
-        .controls, .dict-controls { display:flex; gap:8px; margin-bottom:10px; }
-        input, select, button { padding:10px 14px; border-radius:12px; border:none; font-size:16px; }
-        .btn { background:#ff5a5f; color:white; font-weight:bold; cursor:pointer; }
-        .card { position:relative; min-height:180px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold; background:white; border-radius:24px; margin:15px 0; padding:25px; box-shadow:0 10px 30px rgba(0,0,0,0.15); cursor:pointer; }
-        .back { position:absolute; inset:0; background:#e3f2fd; display:none; align-items:center; justify-content:center; font-size:24px; color:#1565c0; border-radius:24px; flex-direction:column; gap:8px; }
-        .dictionary { max-height:420px; overflow-y:auto; background:#f9f9f9; border-radius:16px; padding:10px; display:none; }
-        .dict-item { padding:12px; background:white; margin:6px 0; border-radius:12px; border-left:4px solid #ff5a5f; cursor:pointer; }
-        .message { padding:12px; border-radius:12px; text-align:center; margin:10px 0; font-weight:bold; }
+        .app {
+            width: 95%; max-width: 500px; background: rgba(255,255,255,0.97); border-radius: 28px;
+            padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+        }
+        h1 { text-align: center; color: #d32f2f; margin: 0 0 20px; }
+        .tab { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab button { flex: 1; padding: 12px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .tab button.active { background: #ff5a5f; color: white; }
+
+        .controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 15px; }
+        select, input, button { padding: 10px 14px; border-radius: 12px; border: none; font-size: 16px; }
+        .btn { background: #ff5a5f; color: white; font-weight: bold; cursor: pointer; }
+
+        .card {
+            position: relative; min-height: 200px; display: flex; align-items: center; justify-content: center;
+            font-size: 32px; font-weight: bold; background: white; border-radius: 24px; margin: 20px 0;
+            padding: 30px 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); cursor: pointer;
+        }
+        .back {
+            position: absolute; inset: 0; background: #e3f2fd; display: none; align-items: center;
+            justify-content: center; font-size: 26px; color: #1565c0; border-radius: 24px; flex-direction: column;
+        }
+        .dictionary { max-height: 420px; overflow-y: auto; background: #f9f9f9; border-radius: 16px; padding: 10px; display: none; }
+        .dict-item { padding: 14px; background: white; margin: 8px 0; border-radius: 12px; border-left: 5px solid #ff5a5f; cursor: pointer; }
+        .message { padding: 12px; border-radius: 12px; text-align: center; margin: 10px 0; font-weight: bold; }
+        .success { background: #c8e6c9; color: #2e7d32; }
+        .error { background: #ffcdd2; color: #c62828; }
     </style>
 </head>
 <body>
@@ -35,19 +50,41 @@
             <button onclick="switchTab(1)" id="tab1">Từ Điển Online</button>
         </div>
 
-        <!-- Phần Học (code cũ của mày) -->
+        <!-- === PHẦN HỌC === -->
         <div id="studyPanel">
             <div class="controls">
-                <select id="mode">...</select>
-                <!-- các nút khác giữ nguyên -->
+                <select id="mode">
+                    <option value="flash">Flashcard</option>
+                    <option value="typing">Gõ Từ</option>
+                    <option value="quiz">Trắc Nghiệm</option>
+                </select>
+                <button class="btn" onclick="toggleDark()">🌙</button>
+                <button class="btn" onclick="speakCurrent()">🔊</button>
             </div>
-            <!-- card, typing, quiz... -->
+
+            <input type="text" id="sheetUrl" placeholder="Dán link CSV Google Sheet..." style="width:100%; margin:10px 0; padding:12px;">
+            <button class="btn" onclick="loadSheet()" style="width:100%; margin-bottom:15px;">🔄 Load Dữ Liệu</button>
+
+            <div id="card" class="card">
+                <div id="front">Nhấn Load để bắt đầu</div>
+                <div id="back" class="back"></div>
+            </div>
+
+            <div id="typingContainer" style="display:none;">
+                <input type="text" id="answer" placeholder="Nhập nghĩa tiếng Việt..." style="width:100%; padding:14px; margin:10px 0;">
+                <button class="btn" onclick="checkTyping()" style="width:100%;">Kiểm tra</button>
+            </div>
+
+            <div id="quizContainer" style="display:none;"></div>
+
+            <div class="stats" id="stats" style="text-align:center; font-size:18px; font-weight:bold; margin-top:10px;">Đúng: 0 / Tổng: 0</div>
+            <div id="message" class="message" style="display:none;"></div>
         </div>
 
-        <!-- Phần Từ Điển Online -->
+        <!-- === TỪ ĐIỂN ONLINE === -->
         <div id="dictPanel" style="display:none;">
-            <div class="dict-controls">
-                <input type="text" id="dictSearch" placeholder="Nhập từ tiếng Nhật hoặc Việt..." style="flex:1;" onkeypress="if(event.key==='Enter') searchDictionary()">
+            <div style="display:flex; gap:8px; margin-bottom:15px;">
+                <input type="text" id="dictSearch" placeholder="Nhập từ Nhật hoặc Việt..." style="flex:1; padding:14px;" onkeypress="if(event.key==='Enter') searchDictionary()">
                 <button class="btn" onclick="searchDictionary()">🔍 Tra</button>
             </div>
             <div id="dictionary" class="dictionary"></div>
@@ -55,60 +92,129 @@
     </div>
 
     <script>
-        // === TỪ ĐIỂN ONLINE ===
+        let data = [], current = null, correct = 0, total = 0, currentMode = 'flash';
+
+        // ================== HỌC ==================
+        async function loadSheet() {
+            const url = document.getElementById('sheetUrl').value.trim();
+            if (!url) return showMessage("Dán link CSV trước!", "error");
+            
+            try {
+                const res = await fetch(url);
+                const text = await res.text();
+                const rows = text.split('\n').slice(1);
+                data = [];
+                rows.forEach(r => {
+                    if (!r.trim()) return;
+                    const cols = parseCSVLine(r);
+                    const jp = cols[0]?.replace(/^"|"$/g,'').trim();
+                    const vi = cols[1]?.replace(/^"|"$/g,'').trim();
+                    if (jp && vi) data.push({jp, vi});
+                });
+                showMessage(`✅ Tải xong ${data.length} từ!`, "success");
+                nextCard();
+            } catch(e) { showMessage("Lỗi load sheet!", "error"); }
+        }
+
+        function parseCSVLine(line) {
+            const result = []; let current = ''; let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                if (line[i] === '"') inQuotes = !inQuotes;
+                else if (line[i] === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+                else current += line[i];
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function nextCard() {
+            if (data.length === 0) return;
+            current = data[Math.floor(Math.random() * data.length)];
+            document.getElementById('front').textContent = current.jp;
+            document.getElementById('back').innerHTML = current.vi;
+            document.getElementById('back').style.display = 'none';
+            document.getElementById('typingContainer').style.display = currentMode === 'typing' ? 'block' : 'none';
+            document.getElementById('quizContainer').style.display = currentMode === 'quiz' ? 'block' : 'none';
+        }
+
+        function checkTyping() {
+            const ans = document.getElementById('answer').value.trim();
+            if (!ans) return;
+            total++;
+            if (ans.toLowerCase() === current.vi.toLowerCase()) {
+                correct++;
+                showMessage("🎉 Đúng!", "success");
+            } else {
+                showMessage(`❌ Sai → ${current.vi}`, "error");
+            }
+            document.getElementById('stats').textContent = `Đúng: ${correct} / Tổng: ${total}`;
+            document.getElementById('answer').value = '';
+            setTimeout(nextCard, 1400);
+        }
+
+        function speakCurrent() {
+            if (current && 'speechSynthesis' in window) {
+                const u = new SpeechSynthesisUtterance(current.jp);
+                u.lang = 'ja-JP';
+                speechSynthesis.speak(u);
+            }
+        }
+
+        // ================== TỪ ĐIỂN ONLINE ==================
         async function searchDictionary() {
             const query = document.getElementById('dictSearch').value.trim();
-            if (!query) return;
-            
             const dictDiv = document.getElementById('dictionary');
-            dictDiv.innerHTML = '<p>Đang tra từ điển...</p>';
+            if (!query) return;
+
             dictDiv.style.display = 'block';
+            dictDiv.innerHTML = '<p>Đang tra từ điển Jisho...</p>';
 
             try {
                 const res = await fetch(`https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(query)}`);
                 const json = await res.json();
 
-                if (json.data.length === 0) {
+                if (!json.data || json.data.length === 0) {
                     dictDiv.innerHTML = `<p>Không tìm thấy từ "${query}"</p>`;
                     return;
                 }
 
                 let html = '';
-                json.data.forEach(entry => {
-                    const japanese = entry.japanese[0];
-                    const senses = entry.senses[0]?.english_definitions.join(', ') || 'Không có nghĩa';
-                    
+                json.data.slice(0, 8).forEach(entry => {
+                    const jp = entry.japanese[0];
+                    const meaning = entry.senses[0]?.english_definitions.join(', ') || '';
                     html += `
-                        <div class="dict-item" onclick="speak('${japanese.word || japanese.reading}')">
-                            <strong>${japanese.word || japanese.reading}</strong> 
-                            <small>(${japanese.reading})</small><br>
-                            <em>${senses}</em>
+                        <div class="dict-item" onclick="speak('${jp.word || jp.reading}')">
+                            <strong>${jp.word || jp.reading}</strong> 
+                            <small>(${jp.reading})</small><br>
+                            <em>${meaning}</em>
                         </div>`;
                 });
                 dictDiv.innerHTML = html;
             } catch(e) {
-                dictDiv.innerHTML = '<p>Lỗi kết nối từ điển. Thử lại sau.</p>';
-            }
-        }
-
-        function speak(text) {
-            if ('speechSynthesis' in window) {
-                const u = new SpeechSynthesisUtterance(text);
-                u.lang = 'ja-JP';
-                speechSynthesis.speak(u);
+                dictDiv.innerHTML = `<p class="error">Lỗi kết nối. Thử lại sau hoặc dùng VPN.</p>`;
             }
         }
 
         function switchTab(n) {
             document.getElementById('studyPanel').style.display = n === 0 ? 'block' : 'none';
             document.getElementById('dictPanel').style.display = n === 1 ? 'block' : 'none';
-            
-            document.querySelectorAll('.tab button').forEach((b,i) => {
-                b.classList.toggle('active', i === n);
-            });
+            document.querySelectorAll('.tab button').forEach((b, i) => b.classList.toggle('active', i === n));
         }
 
-        // Giữ nguyên các hàm loadSheet, nextCard, flashcard... từ code trước
+        function showMessage(txt, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = txt;
+            msg.className = `message ${type}`;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 2500);
+        }
+
+        function toggleDark() { document.body.classList.toggle('dark'); }
+
+        // Khởi tạo
+        window.onload = () => {
+            document.getElementById('stats').textContent = `Đúng: 0 / Tổng: 0`;
+        };
     </script>
 </body>
 </html>
