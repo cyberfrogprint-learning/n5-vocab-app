@@ -1,10 +1,8 @@
 body {
   margin:0;
-  font-family: sans-serif;
-
+  font-family:sans-serif;
   background: url("https://images.pexels.com/photos/33368123/pexels-photo-33368123.jpeg");
   background-size: cover;
-
   display:flex;
   justify-content:center;
   align-items:center;
@@ -12,34 +10,47 @@ body {
 }
 
 .app {
-  width: 350px;
-  background: rgba(255,255,255,0.9);
+  width:360px;
+  background:rgba(255,255,255,0.9);
   padding:20px;
   border-radius:20px;
   text-align:center;
 }
 
-#card {
-  font-size:30px;
-  padding:40px;
-  margin:20px;
+.card {
   background:white;
+  padding:40px;
+  margin:20px 0;
   border-radius:15px;
+  font-size:28px;
+  cursor:pointer;
+}
+
+.hidden {
+  display:none;
 }
 
 button {
-  padding:12px;
-  margin:5px;
   width:100%;
+  padding:10px;
+  margin:5px 0;
   border:none;
   border-radius:10px;
   background:#ff5a5f;
   color:white;
-  font-size:16px;
 }
 
 input, select {
   width:100%;
   padding:10px;
   margin:5px 0;
+}
+
+.dark {
+  background:#111;
+  color:white;
+}
+
+.dark .app {
+  background:#222;
 }
