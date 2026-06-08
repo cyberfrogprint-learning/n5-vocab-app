@@ -1,53 +1,24 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <title>N5 PRO Trainer</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+let vocab = [];
+let filtered = [];
+let current = 0;
 
-<div class="container">
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtC4KU4o9VQ37slwlM4oNFgg76etlvM-z8kscz35G7GbEwV4VmSGqNiupxA0KHGWP0osMemE27_OOy/pub?output=csv";
 
-<h1>📘 N5 PRO Trainer</h1>
+fetch(SHEET_URL)
+  .then(res => res.text())
+  .then(csv => {
+    let rows = csv.split("\n").slice(1);
 
-<input id="search" placeholder="🔍 Tìm từ..." oninput="searchWord()">
+    vocab = rows.map(row => {
+      let cols = row.split(",");
+      return {
+        jp: cols[0],
+        vi: cols[1],
+        lesson: cols[2]
+      };
+    });
 
-<select id="lesson" onchange="filterLesson()">
-  <option value="all">All</option>
-  <option value="1">Lesson 1</option>
-  <option value="2">Lesson 2</option>
-</select>
-
-<div class="progress">
-  <div id="progress-bar"></div>
-</div>
-
-<div class="card" onclick="flipCard()">
-  <div id="card-inner">
-    <div class="card-front" id="front"></div>
-    <div class="card-back" id="back"></div>
-  </div>
-</div>
-
-<div class="controls">
-  <button onclick="prev()">⬅</button>
-  <button onclick="next()">➡</button>
-  <button onclick="toggleSave()">⭐</button>
-</div>
-
-<h2>✍️ Typing Mode</h2>
-<input id="typing" placeholder="Nhập nghĩa..." onkeydown="checkTyping(event)">
-<p id="typing-result"></p>
-
-<h2>🧪 Quiz</h2>
-<div id="quiz"></div>
-
-<button onclick="toggleDark()">🌙 Dark</button>
-
-</div>
-
-<script src="data.js"></script>
-<script src="app.js"></script>
-</body>
-</html>
+    filtered = [...vocab];
+    render();
+    loadQuiz();
+  });
