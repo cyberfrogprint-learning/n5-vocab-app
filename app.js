@@ -1,90 +1,53 @@
-let vocab = [
-  {jp:"水", vi:"nước"},
-  {jp:"火", vi:"lửa"},
-  {jp:"学校", vi:"trường học"},
-  {jp:"先生", vi:"giáo viên"},
-  {jp:"食べる", vi:"ăn"}
-];
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>N5 PRO Trainer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-let current = 0;
-let flipped = false;
+<div class="container">
 
-let saved = JSON.parse(localStorage.getItem("saved")) || [];
+<h1>📘 N5 PRO Trainer</h1>
 
-function updateCard(){
-  document.getElementById("front").innerText = vocab[current].jp;
-  document.getElementById("back").innerText = vocab[current].vi;
-  document.getElementById("card-inner").classList.remove("flipped");
-  flipped = false;
+<input id="search" placeholder="🔍 Tìm từ..." oninput="searchWord()">
 
-  updateProgress();
-}
+<select id="lesson" onchange="filterLesson()">
+  <option value="all">All</option>
+  <option value="1">Lesson 1</option>
+  <option value="2">Lesson 2</option>
+</select>
 
-function flipCard(){
-  document.getElementById("card-inner").classList.toggle("flipped");
-}
+<div class="progress">
+  <div id="progress-bar"></div>
+</div>
 
-function nextWord(){
-  current = (current + 1) % vocab.length;
-  updateCard();
-}
+<div class="card" onclick="flipCard()">
+  <div id="card-inner">
+    <div class="card-front" id="front"></div>
+    <div class="card-back" id="back"></div>
+  </div>
+</div>
 
-function prevWord(){
-  current = (current - 1 + vocab.length) % vocab.length;
-  updateCard();
-}
+<div class="controls">
+  <button onclick="prev()">⬅</button>
+  <button onclick="next()">➡</button>
+  <button onclick="toggleSave()">⭐</button>
+</div>
 
-function toggleSave(){
-  let word = vocab[current].jp;
-  if(saved.includes(word)){
-    saved = saved.filter(w => w !== word);
-    alert("Đã bỏ lưu");
-  } else {
-    saved.push(word);
-    alert("Đã lưu");
-  }
-  localStorage.setItem("saved", JSON.stringify(saved));
-}
+<h2>✍️ Typing Mode</h2>
+<input id="typing" placeholder="Nhập nghĩa..." onkeydown="checkTyping(event)">
+<p id="typing-result"></p>
 
-function updateProgress(){
-  let percent = ((current + 1) / vocab.length) * 100;
-  document.getElementById("progress-bar").style.width = percent + "%";
-}
+<h2>🧪 Quiz</h2>
+<div id="quiz"></div>
 
-// QUIZ
-function loadQuiz(){
-  let q = vocab[Math.floor(Math.random()*vocab.length)];
-  let options = [q.vi];
+<button onclick="toggleDark()">🌙 Dark</button>
 
-  while(options.length < 4){
-    let rand = vocab[Math.floor(Math.random()*vocab.length)].vi;
-    if(!options.includes(rand)) options.push(rand);
-  }
+</div>
 
-  options.sort(()=>Math.random()-0.5);
-
-  let html = `<p>${q.jp} nghĩa là gì?</p>`;
-  options.forEach(opt=>{
-    html += `<button onclick="checkAnswer('${opt}','${q.vi}')">${opt}</button>`;
-  });
-
-  document.getElementById("quiz").innerHTML = html;
-}
-
-function checkAnswer(a, correct){
-  if(a === correct){
-    alert("✅ Đúng");
-  } else {
-    alert("❌ Sai");
-  }
-  loadQuiz();
-}
-
-// DARK MODE
-function toggleDarkMode(){
-  document.body.classList.toggle("dark");
-}
-
-// INIT
-updateCard();
-loadQuiz();
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
