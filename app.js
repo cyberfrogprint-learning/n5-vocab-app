@@ -1,116 +1,166 @@
+```javascript
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtC4KU4o9VQ37slwlM4oNFgg76etlvM-z8kscz35G7GbEwV4VmSGqNiupxA0KHGWP0osMemE27_OOy/pub?output=csv";
 
-let vocab = [];
-let current = 0;
+let data = {};
+let wrongWords = JSON.parse(localStorage.getItem("wrong")) || {};
+
+let currentList = [];
+let current;
 let correct = 0;
-let wrong = 0;
+let total = 0;
 
-let wrongList = JSON.parse(localStorage.getItem("wrong")) || [];
+const card = document.getElementById("card");
+const choices = document.getElementById("choices");
+const answer = document.getElementById("answer");
+const stats = document.getElementById("stats");
+const unitSelect = document.getElementById("unitSelect");
+const modeSelect = document.getElementById("mode");
+const directionSelect = document.getElementById("direction");
 
-fetch(SHEET_URL)
-.then(r=>r.text())
-.then(t=>{
-  vocab = t.split("\n").slice(1).map(r=>{
-    let c=r.split(",");
-    return {jp:c[0],vi:c[1]};
-  }).filter(v=>v.jp);
+// LOAD GOOGLE SHEET
+async function loadSheet() {
+  const res = await fetch(SHEET_URL);
+  const text = await res.text();
 
-  nextWord();
-});
+  const rows = text.split("\n").slice(1);
 
-function nextWord(){
-  let mode = modeSelect();
+  rows.forEach(r => {
+    const [unit, jp, vi] = r.split(",");
 
-  let list = vocab;
-  if(mode==="wrong" && wrongList.length>0){
-    list = vocab.filter(v=>wrongList.includes(v.jp));
-  }
+    if (!unit || !jp || !vi) return;
 
-  current = Math.floor(Math.random()*list.length);
-  show(list[current]);
+    if (!data[unit]) data[unit] = [];
+
+    data[unit].push({
+      jp: jp.trim(),
+      vi: vi.trim()
+    });
+  });
+
+  initApp();
 }
 
-function show(w){
-  resetUI();
-
-  front.textContent = w.jp;
-  back.textContent = w.vi;
-
-  if(modeSelect()==="typing"){
-    typingBox.classList.remove("hidden");
+// INIT APP
+function initApp() {
+  for (let u in data) {
+    let opt = document.createElement("option");
+    opt.value = u;
+    opt.innerText = u;
+    unitSelect.appendChild(opt);
   }
 
-  if(modeSelect()==="quiz"){
-    generateQuiz(w);
+  loadUnit();
+}
+
+// LOAD UNIT
+function loadUnit() {
+  const u = unitSelect.value;
+  currentList = data[u] || [];
+  next();
+}
+
+unitSelect.onchange = loadUnit;
+modeSelect.onchange = next;
+directionSelect.onchange = next;
+
+// NEXT QUESTION
+function next() {
+  choices.innerHTML = "";
+  answer.value = "";
+
+  if (modeSelect.value === "wrong") {
+    currentList = Object.values(wrongWords);
+  }
+
+  if (currentList.length === 0) {
+    card.innerText = "Không có từ";
+    return;
+  }
+
+  current = currentList[Math.floor(Math.random() * currentList.length)];
+
+  render();
+}
+
+// RENDER
+function render() {
+  const dir = directionSelect.value;
+
+  card.innerText = dir === "jpvi" ? current.jp : current.vi;
+
+  if (modeSelect.value === "mcq") {
+    renderChoices();
   }
 }
 
-function resetUI(){
-  back.classList.add("hidden");
-  typingBox.classList.add("hidden");
-  choices.innerHTML="";
-}
+// MCQ
+function renderChoices() {
+  const dir = directionSelect.value;
 
-card.onclick=()=> back.classList.toggle("hidden");
+  let correctAns = dir === "jpvi" ? current.vi : current.jp;
 
-function checkTyping(){
-  let val = answer.value.trim().toLowerCase();
-  let correctAns = back.textContent.toLowerCase();
+  let opts = [correctAns];
 
-  if(val===correctAns){
-    correct++;
-    card.classList.add("correct");
-  }else{
-    wrong++;
-    wrongList.push(front.textContent);
-    localStorage.setItem("wrong", JSON.stringify(wrongList));
-    card.classList.add("wrong");
+  while (opts.length < 4) {
+    let r = currentList[Math.floor(Math.random() * currentList.length)];
+    let val = dir === "jpvi" ? r.vi : r.jp;
+    if (!opts.includes(val)) opts.push(val);
   }
 
-  updateStats();
-  setTimeout(nextWord,800);
-}
+  opts.sort(() => Math.random() - 0.5);
 
-function generateQuiz(w){
-  let arr=[w.vi];
-
-  while(arr.length<4){
-    let r=vocab[Math.floor(Math.random()*vocab.length)].vi;
-    if(!arr.includes(r)) arr.push(r);
-  }
-
-  arr.sort(()=>Math.random()-0.5);
-
-  arr.forEach(a=>{
-    let btn=document.createElement("button");
-    btn.textContent=a;
-
-    btn.onclick=()=>{
-      if(a===w.vi){
-        correct++;
-        btn.classList.add("correct");
-      }else{
-        wrong++;
-        wrongList.push(w.jp);
-        btn.classList.add("wrong");
-      }
-      updateStats();
-      setTimeout(nextWord,800);
-    }
-
-    choices.appendChild(btn);
+  opts.forEach(o => {
+    let b = document.createElement("button");
+    b.innerText = o;
+    b.onclick = () => checkAnswer(o, correctAns);
+    choices.appendChild(b);
   });
 }
 
-function updateStats(){
-  stats.textContent = `✅ ${correct} | ❌ ${wrong}`;
+// CHECK MCQ
+function checkAnswer(user, correctAns) {
+  total++;
+
+  if (user === correctAns) {
+    correct++;
+  } else {
+    saveWrong(current);
+    alert("Sai: " + correctAns);
+  }
+
+  updateStats();
+  next();
 }
 
-function modeSelect(){
-  return document.getElementById("mode").value;
+// CHECK TYPING
+function checkTyping() {
+  const dir = directionSelect.value;
+  let correctAns = dir === "jpvi" ? current.vi : current.jp;
+
+  total++;
+
+  if (answer.value.trim() === correctAns) {
+    correct++;
+  } else {
+    saveWrong(current);
+    alert("Sai: " + correctAns);
+  }
+
+  updateStats();
+  next();
 }
 
-function toggleDark(){
-  document.body.style.background =
-    document.body.style.background === "black" ? "#f7f3ee" : "black";
+// SAVE WRONG
+function saveWrong(word) {
+  wrongWords[word.jp] = word;
+  localStorage.setItem("wrong", JSON.stringify(wrongWords));
 }
+
+// STATS
+function updateStats() {
+  stats.innerText = `Đúng: ${correct}/${total}`;
+}
+
+// START
+loadSheet();
+```
