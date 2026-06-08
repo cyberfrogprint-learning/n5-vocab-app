@@ -1,43 +1,288 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Ôn từ vựng Đông Du</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🇯🇵 N5 Vocab Trainer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+        
+        body {
+            margin: 0;
+            font-family: 'Noto Sans JP', system-ui, sans-serif;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://inkythuatso.com/uploads/images/2021/10/nui-phu-si-vector-inkythuatso-5-02-16-05-59.jpg') center/cover no-repeat fixed;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .app {
+            width: 90%;
+            max-width: 420px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        
+        h1 { margin: 0 0 20px; font-size: 28px; color: #d32f2f; }
+        
+        .controls { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+        
+        select, button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .btn {
+            background: #ff5a5f;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .card {
+            background: white;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            border-radius: 20px;
+            margin: 20px 0;
+            padding: 40px 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .back {
+            position: absolute;
+            inset: 0;
+            background: #f0f4ff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: #1976d2;
+            border-radius: 20px;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+        
+        .choices { display: grid; gap: 10px; margin-top: 15px; }
+        .choice-btn {
+            padding: 14px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 17px;
+        }
+        
+        .message {
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        .success { background: #c8e6c9; color: #2e7d32; }
+        .error { background: #ffcdd2; color: #c62828; }
+    </style>
 </head>
-
 <body>
+    <div class="app">
+        <h1>🇯🇵 N5 Vocab Trainer</h1>
+        
+        <div class="controls">
+            <select id="mode">
+                <option value="flash">Flashcard</option>
+                <option value="typing">Gõ Từ</option>
+                <option value="quiz">Trắc Nghiệm</option>
+                <option value="wrong">Từ Sai</option>
+            </select>
+            <button class="btn" onclick="toggleDark()">🌙</button>
+            <button class="btn" onclick="resetStats()">Reset</button>
+        </div>
 
-<div class="app">
+        <div id="card" class="card" style="position:relative">
+            <div id="front">Nhấn "Load" để bắt đầu</div>
+            <div id="back" class="back"></div>
+        </div>
 
-<h1>🇯🇵 N5 Trainer XS MAX</h1>
+        <div id="typingContainer" style="display:none">
+            <input type="text" id="answer" placeholder="Nhập nghĩa tiếng Việt...">
+            <button class="btn" onclick="checkTyping()" style="width:100%">Kiểm tra</button>
+        </div>
 
-<select id="mode">
-  <option value="flash">Flashcard</option>
-  <option value="typing">Typing</option>
-  <option value="quiz">Quiz</option>
-  <option value="wrong">Sai</option>
-</select>
+        <div id="quizContainer" style="display:none">
+            <div id="choices" class="choices"></div>
+        </div>
 
-<div class="card" id="card">
-  <div id="front"></div>
-  <div id="back" class="hidden"></div>
-</div>
+        <div class="stats" id="stats">Đúng: 0 / Tổng: 0</div>
+        
+        <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-1vRtC4KU4o9VQ37slwlM4oNFgg76etlvM-z8kscz35G7GbEwV4VmSGqNiupxA0KHGWP0osMemE27_OOy/pub?output=csv" style="width:100%; margin:10px 0;">
+        <button class="btn" onclick="loadSheet()" style="width:100%">🔄 Load Dữ Liệu</button>
+        
+        <div id="message" class="message" style="display:none"></div>
+    </div>
 
-<div id="typingBox" class="hidden">
-  <input id="answer" placeholder="Nhập nghĩa...">
-  <button onclick="checkTyping()">Check</button>
-</div>
+    <script>
+        let data = [];
+        let wrongWords = JSON.parse(localStorage.getItem("wrongWords")) || {};
+        let current = null;
+        let correct = 0, total = 0;
+        let currentMode = 'flash';
 
-<div id="choices"></div>
+        const front = document.getElementById('front');
+        const back = document.getElementById('back');
+        const card = document.getElementById('card');
+        const statsEl = document.getElementById('stats');
+        const modeSelect = document.getElementById('mode');
+        const typingContainer = document.getElementById('typingContainer');
+        const quizContainer = document.getElementById('quizContainer');
+        const answerInput = document.getElementById('answer');
+        const choicesEl = document.getElementById('choices');
+        const sheetUrlInput = document.getElementById('sheetUrl');
+        const messageEl = document.getElementById('message');
 
-<h3 id="stats"></h3>
+        async function loadSheet() {
+            let url = sheetUrlInput.value.trim();
+            if (!url) return showMessage("Dán link CSV vào trước!", "error");
+            
+            try {
+                const res = await fetch(url);
+                const text = await res.text();
+                const rows = text.split('\n').slice(1);
+                
+                data = [];
+                rows.forEach(r => {
+                    if (!r.trim()) return;
+                    const [jp, vi] = r.split(',').map(c => c.trim().replace(/^"|"$/g,''));
+                    if (jp && vi) data.push({jp, vi});
+                });
 
-<button onclick="toggleDark()">🌙</button>
+                showMessage(`Tải xong ${data.length} từ!`, "success");
+                nextCard();
+            } catch(e) {
+                showMessage("Lỗi load sheet. Kiểm tra link!", "error");
+            }
+        }
 
-</div>
+        function nextCard() {
+            choicesEl.innerHTML = '';
+            answerInput.value = '';
+            back.style.display = 'none';
+            
+            let list = currentMode === 'wrong' ? Object.values(wrongWords) : data;
+            if (list.length === 0) {
+                front.textContent = "Không có dữ liệu!";
+                return;
+            }
+            
+            current = list[Math.floor(Math.random() * list.length)];
+            front.textContent = current.jp;
+            back.textContent = current.vi;
+            
+            typingContainer.style.display = currentMode === 'typing' ? 'block' : 'none';
+            quizContainer.style.display = currentMode === 'quiz' ? 'block' : 'none';
+            
+            if (currentMode === 'quiz') renderChoices(list);
+        }
 
-<script src="app.js"></script>
+        function renderChoices(list) {
+            let opts = [current.vi];
+            while (opts.length < 4) {
+                const rand = list[Math.floor(Math.random()*list.length)].vi;
+                if (!opts.includes(rand)) opts.push(rand);
+            }
+            opts.sort(() => Math.random() - 0.5);
+            
+            choicesEl.innerHTML = '';
+            opts.forEach(o => {
+                const b = document.createElement('button');
+                b.className = 'choice-btn';
+                b.textContent = o;
+                b.onclick = () => checkQuiz(o);
+                choicesEl.appendChild(b);
+            });
+        }
 
+        function checkQuiz(ans) {
+            total++;
+            if (ans === current.vi) {
+                correct++;
+                showMessage("🎉 Đúng!", "success");
+            } else {
+                saveWrong(current);
+                showMessage(`❌ Sai → ${current.vi}`, "error");
+            }
+            updateStats();
+            setTimeout(nextCard, 1400);
+        }
+
+        function checkTyping() {
+            if (!answerInput.value.trim()) return;
+            total++;
+            const user = answerInput.value.trim().toLowerCase();
+            const correctAns = current.vi.toLowerCase();
+            
+            if (user === correctAns || correctAns.includes(user) || user.includes(correctAns)) {
+                correct++;
+                showMessage("🎉 Đúng!", "success");
+            } else {
+                saveWrong(current);
+                showMessage(`❌ Sai → ${current.vi}`, "error");
+            }
+            updateStats();
+            setTimeout(nextCard, 1500);
+        }
+
+        function saveWrong(w) {
+            wrongWords[w.jp] = w;
+            localStorage.setItem("wrongWords", JSON.stringify(wrongWords));
+        }
+
+        function updateStats() {
+            statsEl.textContent = `Đúng: ${correct} / Tổng: ${total}`;
+        }
+
+        function showMessage(txt, type) {
+            messageEl.textContent = txt;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            setTimeout(() => messageEl.style.display = 'none', 2500);
+        }
+
+        function toggleDark() {
+            document.body.classList.toggle('dark');
+        }
+
+        function resetStats() {
+            if (confirm("Reset thống kê?")) {
+                correct = total = 0;
+                updateStats();
+            }
+        }
+
+        card.onclick = () => { if (currentMode === 'flash') back.style.display = back.style.display === 'flex' ? 'none' : 'flex'; };
+        modeSelect.onchange = () => { currentMode = modeSelect.value; nextCard(); };
+        answerInput.addEventListener('keypress', e => { if (e.key === 'Enter') checkTyping(); });
+
+        // Khởi động
+        window.onload = () => updateStats();
+    </script>
 </body>
 </html>
