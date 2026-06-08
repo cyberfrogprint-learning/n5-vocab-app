@@ -1,104 +1,116 @@
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtC4KU4o9VQ37slwlM4oNFgg76etlvM-z8kscz35G7GbEwV4VmSGqNiupxA0KHGWP0osMemE27_OOy/pub?output=csv";
 
 let vocab = [];
-let filtered = [];
 let current = 0;
-let showJP = true;
+let correct = 0;
+let wrong = 0;
 
-// 🔥 LOAD DATA (BẢN CHỐNG LỖI)
+let wrongList = JSON.parse(localStorage.getItem("wrong")) || [];
+
 fetch(SHEET_URL)
-  .then(res => res.text())
-  .then(text => {
-    const rows = text.split("\n").slice(1);
+.then(r=>r.text())
+.then(t=>{
+  vocab = t.split("\n").slice(1).map(r=>{
+    let c=r.split(",");
+    return {jp:c[0],vi:c[1]};
+  }).filter(v=>v.jp);
 
-    vocab = rows.map(row => {
-      const cols = row.split(",");
+  nextWord();
+});
 
-      return {
-        jp: cols[0]?.replace(/"/g, "").trim(),
-        vi: cols[1]?.replace(/"/g, "").trim(),
-        lesson: cols[2]?.replace(/"/g, "").trim()
-      };
-    }).filter(v => v.jp && v.vi);
+function nextWord(){
+  let mode = modeSelect();
 
-    filtered = [...vocab];
-
-    setupLessonFilter();
-    showWord();
-  })
-  .catch(err => {
-    console.error("Lỗi load sheet:", err);
-  });
-
-
-// 🔹 FILTER LESSON
-function setupLessonFilter() {
-  const select = document.getElementById("lessonFilter");
-
-  const lessons = [...new Set(vocab.map(v => v.lesson))];
-
-  lessons.forEach(l => {
-    const opt = document.createElement("option");
-    opt.value = l;
-    opt.textContent = "Bài " + l;
-    select.appendChild(opt);
-  });
-
-  select.addEventListener("change", () => {
-    const val = select.value;
-
-    filtered = val === "all"
-      ? vocab
-      : vocab.filter(v => v.lesson === val);
-
-    current = 0;
-    showWord();
-  });
-}
-
-
-// 🔹 HIỂN THỊ
-function showWord() {
-  if (filtered.length === 0) {
-    document.getElementById("front").textContent = "Không có dữ liệu";
-    return;
+  let list = vocab;
+  if(mode==="wrong" && wrongList.length>0){
+    list = vocab.filter(v=>wrongList.includes(v.jp));
   }
 
-  const word = filtered[current];
-
-  document.getElementById("front").textContent =
-    showJP ? word.jp : word.vi;
-
-  document.getElementById("back").textContent =
-    showJP ? word.vi : word.jp;
-
-  document.getElementById("back").classList.add("hidden");
+  current = Math.floor(Math.random()*list.length);
+  show(list[current]);
 }
 
+function show(w){
+  resetUI();
 
-// 🔹 LẬT THẺ
-function flipCard() {
-  document.getElementById("back").classList.toggle("hidden");
+  front.textContent = w.jp;
+  back.textContent = w.vi;
+
+  if(modeSelect()==="typing"){
+    typingBox.classList.remove("hidden");
+  }
+
+  if(modeSelect()==="quiz"){
+    generateQuiz(w);
+  }
 }
 
-
-// 🔹 NEXT
-function nextWord() {
-  current = (current + 1) % filtered.length;
-  showWord();
+function resetUI(){
+  back.classList.add("hidden");
+  typingBox.classList.add("hidden");
+  choices.innerHTML="";
 }
 
+card.onclick=()=> back.classList.toggle("hidden");
 
-// 🔹 TRỘN
-function shuffleWords() {
-  filtered.sort(() => Math.random() - 0.5);
-  current = 0;
-  showWord();
+function checkTyping(){
+  let val = answer.value.trim().toLowerCase();
+  let correctAns = back.textContent.toLowerCase();
+
+  if(val===correctAns){
+    correct++;
+    card.classList.add("correct");
+  }else{
+    wrong++;
+    wrongList.push(front.textContent);
+    localStorage.setItem("wrong", JSON.stringify(wrongList));
+    card.classList.add("wrong");
+  }
+
+  updateStats();
+  setTimeout(nextWord,800);
 }
 
+function generateQuiz(w){
+  let arr=[w.vi];
 
-// 🔹 ĐỔI CHẾ ĐỘ
-function toggleMode() {
-  showJP = !showJP;
-  showWord();
+  while(arr.length<4){
+    let r=vocab[Math.floor(Math.random()*vocab.length)].vi;
+    if(!arr.includes(r)) arr.push(r);
+  }
+
+  arr.sort(()=>Math.random()-0.5);
+
+  arr.forEach(a=>{
+    let btn=document.createElement("button");
+    btn.textContent=a;
+
+    btn.onclick=()=>{
+      if(a===w.vi){
+        correct++;
+        btn.classList.add("correct");
+      }else{
+        wrong++;
+        wrongList.push(w.jp);
+        btn.classList.add("wrong");
+      }
+      updateStats();
+      setTimeout(nextWord,800);
+    }
+
+    choices.appendChild(btn);
+  });
+}
+
+function updateStats(){
+  stats.textContent = `✅ ${correct} | ❌ ${wrong}`;
+}
+
+function modeSelect(){
+  return document.getElementById("mode").value;
+}
+
+function toggleDark(){
+  document.body.style.background =
+    document.body.style.background === "black" ? "#f7f3ee" : "black";
 }
