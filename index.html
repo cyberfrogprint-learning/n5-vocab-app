@@ -2,23 +2,38 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>N5 Trainer</title>
+  <title>N5 Trainer Pro</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>📘 N5 Vocabulary Trainer</h1>
+<div class="container">
 
-<div id="card">
-  <p id="word">Click để bắt đầu</p>
+  <h1>📘 N5 Trainer</h1>
+
+  <div class="progress">
+    <div id="progress-bar"></div>
+  </div>
+
+  <div class="card" onclick="flipCard()">
+    <div id="card-inner">
+      <div class="card-front" id="front">Start</div>
+      <div class="card-back" id="back">...</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="prevWord()">⬅</button>
+    <button onclick="nextWord()">➡</button>
+    <button onclick="toggleSave()">⭐</button>
+  </div>
+
+  <h2>Quiz</h2>
+  <div id="quiz"></div>
+
+  <button onclick="toggleDarkMode()">🌙 Dark Mode</button>
+
 </div>
-
-<button onclick="nextWord()">Next</button>
-<button onclick="flipCard()">Flip</button>
-<button onclick="saveWord()">⭐ Save</button>
-
-<h2>Quiz</h2>
-<div id="quiz"></div>
 
 <script src="app.js"></script>
 </body>
