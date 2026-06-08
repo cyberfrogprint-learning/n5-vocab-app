@@ -1,23 +1,22 @@
-```javascript
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtC4KU4o9VQ37slwlM4oNFgg76etlvM-z8kscz35G7GbEwV4VmSGqNiupxA0KHGWP0osMemE27_OOy/pub?output=csv";
+const SHEET_URL = "DÁN_LINK_CSV_VÀO_ĐÂY";
 
-let data = {};
+let data = [];
 let wrongWords = JSON.parse(localStorage.getItem("wrong")) || {};
 
-let currentList = [];
 let current;
 let correct = 0;
 let total = 0;
 
-const card = document.getElementById("card");
-const choices = document.getElementById("choices");
+const front = document.getElementById("front");
+const back = document.getElementById("back");
 const answer = document.getElementById("answer");
 const stats = document.getElementById("stats");
-const unitSelect = document.getElementById("unitSelect");
-const modeSelect = document.getElementById("mode");
-const directionSelect = document.getElementById("direction");
+const mode = document.getElementById("mode");
+const choices = document.getElementById("choices");
+const typingBox = document.getElementById("typingBox");
+const card = document.getElementById("card");
 
-// LOAD GOOGLE SHEET
+// LOAD DATA
 async function loadSheet() {
   const res = await fetch(SHEET_URL);
   const text = await res.text();
@@ -26,85 +25,66 @@ async function loadSheet() {
 
   rows.forEach(r => {
     const [unit, jp, vi] = r.split(",");
+    if (!jp || !vi) return;
 
-    if (!unit || !jp || !vi) return;
-
-    if (!data[unit]) data[unit] = [];
-
-    data[unit].push({
+    data.push({
       jp: jp.trim(),
       vi: vi.trim()
     });
   });
 
-  initApp();
-}
-
-// INIT APP
-function initApp() {
-  for (let u in data) {
-    let opt = document.createElement("option");
-    opt.value = u;
-    opt.innerText = u;
-    unitSelect.appendChild(opt);
-  }
-
-  loadUnit();
-}
-
-// LOAD UNIT
-function loadUnit() {
-  const u = unitSelect.value;
-  currentList = data[u] || [];
   next();
 }
 
-unitSelect.onchange = loadUnit;
-modeSelect.onchange = next;
-directionSelect.onchange = next;
-
-// NEXT QUESTION
+// NEXT
 function next() {
   choices.innerHTML = "";
   answer.value = "";
+  back.classList.add("hidden");
 
-  if (modeSelect.value === "wrong") {
-    currentList = Object.values(wrongWords);
+  let list = data;
+
+  if (mode.value === "wrong") {
+    list = Object.values(wrongWords);
   }
 
-  if (currentList.length === 0) {
-    card.innerText = "Không có từ";
+  if (list.length === 0) {
+    front.innerText = "Không có dữ liệu";
     return;
   }
 
-  current = currentList[Math.floor(Math.random() * currentList.length)];
+  current = list[Math.floor(Math.random() * list.length)];
 
-  render();
-}
+  front.innerText = current.jp;
+  back.innerText = current.vi;
 
-// RENDER
-function render() {
-  const dir = directionSelect.value;
+  // typing
+  if (mode.value === "typing") {
+    typingBox.classList.remove("hidden");
+  } else {
+    typingBox.classList.add("hidden");
+  }
 
-  card.innerText = dir === "jpvi" ? current.jp : current.vi;
-
-  if (modeSelect.value === "mcq") {
-    renderChoices();
+  // quiz
+  if (mode.value === "quiz") {
+    renderChoices(list);
   }
 }
 
-// MCQ
-function renderChoices() {
-  const dir = directionSelect.value;
+// FLIP CARD
+card.onclick = () => {
+  if (mode.value === "flash") {
+    back.classList.toggle("hidden");
+  }
+};
 
-  let correctAns = dir === "jpvi" ? current.vi : current.jp;
-
-  let opts = [correctAns];
+// QUIZ
+function renderChoices(list) {
+  let opts = [current.vi];
 
   while (opts.length < 4) {
-    let r = currentList[Math.floor(Math.random() * currentList.length)];
-    let val = dir === "jpvi" ? r.vi : r.jp;
-    if (!opts.includes(val)) opts.push(val);
+    let r = list[Math.floor(Math.random() * list.length)].vi;
+    if (!opts.includes(r)) opts.push(r);
   }
 
   opts.sort(() => Math.random() - 0.5);
@@ -112,38 +92,34 @@ function renderChoices() {
   opts.forEach(o => {
     let b = document.createElement("button");
     b.innerText = o;
-    b.onclick = () => checkAnswer(o, correctAns);
+    b.onclick = () => checkQuiz(o);
     choices.appendChild(b);
   });
 }
 
-// CHECK MCQ
-function checkAnswer(user, correctAns) {
+function checkQuiz(ans) {
   total++;
 
-  if (user === correctAns) {
+  if (ans === current.vi) {
     correct++;
   } else {
     saveWrong(current);
-    alert("Sai: " + correctAns);
+    alert("Sai: " + current.vi);
   }
 
   updateStats();
   next();
 }
 
-// CHECK TYPING
+// TYPING
 function checkTyping() {
-  const dir = directionSelect.value;
-  let correctAns = dir === "jpvi" ? current.vi : current.jp;
-
   total++;
 
-  if (answer.value.trim() === correctAns) {
+  if (answer.value.trim() === current.vi) {
     correct++;
   } else {
     saveWrong(current);
-    alert("Sai: " + correctAns);
+    alert("Sai: " + current.vi);
   }
 
   updateStats();
@@ -151,8 +127,8 @@ function checkTyping() {
 }
 
 // SAVE WRONG
-function saveWrong(word) {
-  wrongWords[word.jp] = word;
+function saveWrong(w) {
+  wrongWords[w.jp] = w;
   localStorage.setItem("wrong", JSON.stringify(wrongWords));
 }
 
@@ -161,6 +137,13 @@ function updateStats() {
   stats.innerText = `Đúng: ${correct}/${total}`;
 }
 
+// DARK MODE
+function toggleDark() {
+  document.body.classList.toggle("dark");
+}
+
+// CHANGE MODE
+mode.onchange = next;
+
 // START
 loadSheet();
-```
