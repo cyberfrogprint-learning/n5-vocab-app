@@ -1,4 +1,4 @@
-const SHEET_URL = "DÁN_LINK_CSV_VÀO_ĐÂY";
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtC4KU4o9VQ37slwlM4oNFgg76etlvM-z8kscz35G7GbEwV4VmSGqNiupxA0KHGWP0osMemE27_OOy/pub?output=csv";
 
 let data = [];
 let wrongWords = JSON.parse(localStorage.getItem("wrong")) || {};
